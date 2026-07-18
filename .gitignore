@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Secrets & environment
+.env
+.env.local
+*.local
+client_secret*.json
+appsettings.Production.json
+
+# OS
+.DS_Store
+Thumbs.db
