@@ -45,10 +45,24 @@ blog-client/         React 19 + TypeScript + Vite frontend
 
 ## Run it locally
 
-You need: .NET 8 SDK, Node 22, PostgreSQL 16 (Redis optional — the API falls
-back to an in-memory cache when no Redis connection string is set).
+You need: .NET 8 SDK, Node 22, and Docker (or a native PostgreSQL 16 install).
+Redis is optional — the API falls back to an in-memory cache when no Redis
+connection string is set, so nothing else needs to be running.
 
-Backend:
+**1. Start the database.** The dev configuration
+(`appsettings.Development.json`) expects PostgreSQL on `localhost:5432` with
+database `blogdb` and user/password `postgres`/`postgres`. With Docker that is
+one command (works the same in PowerShell and bash):
+
+```bash
+docker run -d --name blog-postgres -e POSTGRES_DB=blogdb -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -v blog-pgdata:/var/lib/postgresql/data postgres:16-alpine
+```
+
+On later runs the container already exists — just `docker start blog-postgres`.
+Without a reachable database the API retries five times on startup and then
+exits with a connection error.
+
+**2. Run the API:**
 
 ```bash
 cd Blog.Api
@@ -58,7 +72,7 @@ dotnet run
 # and three demo posts are seeded on first start.
 ```
 
-Frontend:
+**3. Run the client:**
 
 ```bash
 cd blog-client
