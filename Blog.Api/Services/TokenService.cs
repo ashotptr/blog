@@ -19,10 +19,6 @@ public class TokenService : ITokenService
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            // ClaimTypes.Name is what the refresh endpoint reads back via
-            // principal.Identity.Name, and it serialises to "unique_name" in the
-            // JWT, which is what the frontend displays. Without it, token refresh
-            // silently fails.
             new Claim(ClaimTypes.Name, user.UserName ?? string.Empty)
         };
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

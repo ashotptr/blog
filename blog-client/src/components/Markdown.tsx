@@ -15,8 +15,6 @@ import docker from 'react-syntax-highlighter/dist/esm/languages/prism/docker';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
 
-// Registering only the languages a dev blog actually uses keeps the bundle a
-// fraction of the size of the full Prism build.
 SyntaxHighlighter.registerLanguage('csharp', csharp);
 SyntaxHighlighter.registerLanguage('cs', csharp);
 SyntaxHighlighter.registerLanguage('typescript', typescript);

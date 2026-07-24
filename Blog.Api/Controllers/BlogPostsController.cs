@@ -28,12 +28,12 @@ public class BlogPostsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PostSummaryDto>>> GetBlogPosts()
     {
-        // Read-through cache: serve the list from Redis when possible, fall back
-        // to the database and repopulate. Cache failures only cost the speed-up.
         var cached = await TryCacheGetAsync(AllPostsCacheKey);
+
         if (cached != null)
         {
             var cachedPosts = JsonSerializer.Deserialize<List<PostSummaryDto>>(cached);
+
             if (cachedPosts != null)
             {
                 return Ok(cachedPosts);
@@ -86,7 +86,9 @@ public class BlogPostsController : ControllerBase
         };
 
         _context.BlogPosts.Add(newBlogPost);
+
         await _context.SaveChangesAsync();
+        
         await TryCacheRemoveAsync(AllPostsCacheKey);
 
         await _context.Entry(newBlogPost).Reference(p => p.Author).LoadAsync();
@@ -111,6 +113,7 @@ public class BlogPostsController : ControllerBase
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
         if (postToUpdate.AuthorId != userId && !User.IsInRole("Admin"))
         {
             return Forbid();
@@ -121,6 +124,7 @@ public class BlogPostsController : ControllerBase
         postToUpdate.Tags = NormalizeTags(blogPostDto.Tags);
 
         await _context.SaveChangesAsync();
+        
         await TryCacheRemoveAsync(AllPostsCacheKey);
 
         return NoContent();
@@ -138,13 +142,16 @@ public class BlogPostsController : ControllerBase
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
         if (postToDelete.AuthorId != userId && !User.IsInRole("Admin"))
         {
             return Forbid();
         }
 
         _context.BlogPosts.Remove(postToDelete);
+
         await _context.SaveChangesAsync();
+        
         await TryCacheRemoveAsync(AllPostsCacheKey);
 
         return NoContent();
@@ -198,15 +205,16 @@ public class BlogPostsController : ControllerBase
     {
         const int maxLength = 240;
 
-        // Keep the excerpt readable: drop code fences and markdown symbols.
         var lines = content.Split('\n');
         var plainLines = new List<string>();
         bool inCodeFence = false;
+        
         foreach (var line in lines)
         {
             if (line.TrimStart().StartsWith("```"))
             {
                 inCodeFence = !inCodeFence;
+        
                 continue;
             }
             if (!inCodeFence)
@@ -216,12 +224,17 @@ public class BlogPostsController : ControllerBase
         }
 
         var plain = string.Join(" ", plainLines.Where(l => !string.IsNullOrWhiteSpace(l))).Trim();
+
         return plain.Length <= maxLength ? plain : plain[..maxLength].TrimEnd() + "…";
     }
 
     private static List<string> NormalizeTags(List<string>? tags)
     {
-        if (tags == null) return new List<string>();
+        if (tags == null)
+        {
+            return new List<string>();
+        }
+
         return tags
             .Select(t => t.Trim().ToLowerInvariant())
             .Where(t => t.Length > 0)
@@ -239,6 +252,7 @@ public class BlogPostsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Cache read failed for {CacheKey}", key);
+
             return null;
         }
     }

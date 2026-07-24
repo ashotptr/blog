@@ -32,8 +32,6 @@ const parseUser = (token: string): AuthUser | null => {
   try {
     const claims = jwtDecode<JwtClaims>(token);
 
-    // If the access token expired longer ago than the refresh window, the
-    // refresh token is certainly dead too — treat as logged out.
     if (claims.exp && claims.exp * 1000 + REFRESH_WINDOW_MS < Date.now()) {
       return null;
     }
@@ -45,7 +43,8 @@ const parseUser = (token: string): AuthUser | null => {
       name: claims.unique_name ?? 'User',
       roles
     };
-  } catch {
+  }
+  catch {
     return null;
   }
 };
@@ -53,25 +52,32 @@ const parseUser = (token: string): AuthUser | null => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
     const token = localStorage.getItem('accessToken');
-    if (!token) return null;
+    
+    if (!token) {
+      return null;
+    }
 
     const parsed = parseUser(token);
+    
     if (!parsed) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     }
+
     return parsed;
   });
 
   const login = (accessToken: string, refreshToken: string) => {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
+
     setUser(parseUser(accessToken));
   };
 
   const logout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+
     setUser(null);
   };
 
@@ -84,11 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
+  
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+
   return context;
 };

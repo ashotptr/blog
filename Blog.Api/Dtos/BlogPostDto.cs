@@ -1,4 +1,3 @@
-// In Dtos/BlogPostDto.cs
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 

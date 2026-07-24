@@ -13,9 +13,11 @@ namespace Blog.Api.Data
             var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("SeedData");
 
             string[] roleNames = { "Admin", "Writer", "Reader" };
+            
             foreach (var roleName in roleNames)
             {
                 var roleExist = await roleManager.RoleExistsAsync(roleName);
+                
                 if (!roleExist)
                 {
                     await roleManager.CreateAsync(new IdentityRole(roleName));
@@ -28,10 +30,12 @@ namespace Blog.Api.Data
             if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
             {
                 logger.LogWarning("AdminUser:Email / AdminUser:Password are not configured — skipping admin and demo post seeding.");
+                
                 return;
             }
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            
             if (adminUser == null)
             {
                 adminUser = new ApplicationUser
@@ -48,13 +52,12 @@ namespace Blog.Api.Data
                 }
                 else
                 {
-                    logger.LogWarning("Could not create admin user: {Errors}",
-                        string.Join("; ", result.Errors.Select(e => e.Description)));
+                    logger.LogWarning("Could not create admin user: {Errors}", string.Join("; ", result.Errors.Select(e => e.Description)));
+                    
                     return;
                 }
             }
 
-            // Demo content so a fresh deployment is presentable immediately.
             if (!context.BlogPosts.Any())
             {
                 context.BlogPosts.AddRange(DemoPosts.Select(p => new BlogPost
@@ -65,7 +68,9 @@ namespace Blog.Api.Data
                     AuthorId = adminUser.Id,
                     PublishedDate = DateTime.UtcNow.AddDays(p.daysAgo * -1)
                 }));
+
                 await context.SaveChangesAsync();
+                
                 logger.LogInformation("Seeded {Count} demo posts.", DemoPosts.Count);
             }
         }
@@ -91,8 +96,6 @@ The source for both the API and this client is on my GitHub — every feature yo
 `principal.Identity.Name` is populated from `ClaimTypes.Name`. My token service issued `sub`, `jti`, and `nameidentifier` claims… but never `Name`:
 
 ```csharp
-// Without this claim, principal.Identity.Name is null
-// and every refresh request fails.
 new Claim(ClaimTypes.Name, user.UserName ?? string.Empty)
 ```
 

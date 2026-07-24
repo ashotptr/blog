@@ -39,7 +39,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Admins manage everything; writers manage their own posts.
   const visiblePosts = isAdmin ? posts : posts.filter(post => post.authorName === user?.name);
   const canWrite = hasRole('Admin', 'Writer');
 

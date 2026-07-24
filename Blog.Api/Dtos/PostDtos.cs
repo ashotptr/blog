@@ -1,10 +1,5 @@
 namespace Blog.Api.Dtos;
 
-/// <summary>
-/// Public read models. Posts are never returned as raw entities because the
-/// Author navigation is an Identity user — serialising it would leak the
-/// password hash, security stamp, and refresh token.
-/// </summary>
 public class PostSummaryDto
 {
     public int Id { get; set; }

@@ -12,8 +12,6 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// One refresh at a time: parallel 401s all wait on the same request instead of
-// racing each other and invalidating the freshly rotated refresh token.
 let refreshing: Promise<string | null> | null = null;
 
 const refreshTokens = async (): Promise<string | null> => {

@@ -14,8 +14,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddCors(options =>
 {
-    // Comma-separated list, e.g. "http://localhost:5173,https://blog.example.com"
     var allowedOrigins = builder.Configuration.GetValue<string>("Cors:AllowedOrigins") ?? "http://localhost:5173";
+
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -36,9 +36,8 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-// Redis when configured, in-memory otherwise — the controllers only depend on
-// IDistributedCache, so local development works without any infrastructure.
 var redisConnection = builder.Configuration.GetConnectionString("Redis");
+
 if (!string.IsNullOrWhiteSpace(redisConnection))
 {
     builder.Services.AddStackExchangeRedisCache(options =>
@@ -75,9 +74,6 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key is not configured.")))
     };
 });
-// Google sign-in uses ID-token validation in AccountController (Google.Apis.Auth),
-// which only needs the ClientId as audience — no OAuth middleware and no client
-// secret ever touch this server.
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -95,13 +91,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// TLS terminates at the Cloudflare edge in production (the tunnel talks plain
-// HTTP to this container), so there is no in-app HTTPS redirect or HSTS here.
-
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    
     await next();
 });
 
@@ -120,24 +114,24 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<ApplicationDbContext>();
 
-    // Apply pending migrations on startup. When the whole stack boots together,
-    // Postgres can accept connections a moment after the API starts, so retry
-    // briefly before giving up.
     for (int attempt = 1; ; attempt++)
     {
         try
         {
             db.Database.Migrate();
+            
             break;
         }
         catch (Exception ex) when (attempt < 5)
         {
             app.Logger.LogWarning(ex, "Database not ready (attempt {Attempt}/5), retrying in 3 seconds...", attempt);
+            
             await Task.Delay(3000);
         }
     }
 
     var configuration = services.GetRequiredService<IConfiguration>();
+    
     await SeedData.Initialize(services, configuration);
 }
 
