@@ -75,6 +75,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting("fixed")]
     public async Task<IActionResult> Refresh(TokenDto tokenDto)
     {
         if (tokenDto.AccessToken == null || tokenDto.RefreshToken == null)
