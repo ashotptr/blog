@@ -27,7 +27,7 @@ services:
       timeout: 3s
       retries: 10
 
-  api:
+  blog-api:
     build: ./Blog.Api
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -47,15 +47,15 @@ services:
       redis:
         condition: service_healthy
 
-  client:
+  blog-client:
     build:
       context: ./blog-client
       args:
-        VITE_API_URL: "http://localhost:5028"
+        VITE_API_URL: ""
     ports:
       - "8080:80"
     depends_on:
-      - api
+      - blog-api
 
 volumes:
   pgdata:

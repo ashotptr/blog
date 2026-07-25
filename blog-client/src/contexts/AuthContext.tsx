@@ -3,11 +3,18 @@ import type { ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
 interface JwtClaims {
+  sub?: string;
+  jti?: string;
+  exp?: number;
+
   unique_name?: string;
   nameid?: string;
-  sub?: string;
+  name?: string;
   role?: string | string[];
-  exp?: number;
+
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: string;
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'?: string;
+  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?: string | string[];
 }
 
 export interface AuthUser {
@@ -28,6 +35,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const REFRESH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+const CLAIM_NAME = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
+const CLAIM_NAMEID = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier';
+const CLAIM_ROLE = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+
+const toRoles = (value: string | string[] | undefined): string[] => {
+  if (value == null) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+};
+
 const parseUser = (token: string): AuthUser | null => {
   try {
     const claims = jwtDecode<JwtClaims>(token);
@@ -36,13 +55,15 @@ const parseUser = (token: string): AuthUser | null => {
       return null;
     }
 
-    const roles = claims.role == null ? [] : Array.isArray(claims.role) ? claims.role : [claims.role];
+    const name = claims[CLAIM_NAME] ?? claims.unique_name ?? claims.name ?? '';
+    const id = claims[CLAIM_NAMEID] ?? claims.nameid ?? claims.sub ?? '';
 
-    return {
-      id: claims.nameid ?? claims.sub ?? '',
-      name: claims.unique_name ?? 'User',
-      roles
-    };
+    const roles = [
+      ...toRoles(claims[CLAIM_ROLE]),
+      ...toRoles(claims.role)
+    ];
+
+    return { id, name, roles: [...new Set(roles)] };
   }
   catch {
     return null;
@@ -52,13 +73,13 @@ const parseUser = (token: string): AuthUser | null => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
     const token = localStorage.getItem('accessToken');
-    
+
     if (!token) {
       return null;
     }
 
     const parsed = parseUser(token);
-    
+
     if (!parsed) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -92,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  
+
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }

@@ -49,9 +49,11 @@ services:
     build:
       context: ../blog-client
       args:
-        VITE_API_URL: "https://api.blog.${DOMAIN}"
+        VITE_API_URL: ""
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     restart: unless-stopped
+    depends_on:
+      - blog-api
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -60,7 +62,6 @@ services:
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
     depends_on:
-      - blog-api
       - blog-client
 
 volumes:
