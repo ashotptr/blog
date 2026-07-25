@@ -9,7 +9,8 @@ Markdown and rendered with syntax highlighting.
 
 ## Features
 
-- Public post list with excerpts, tags, and full-text search
+- Public post list with excerpts, tags, and case-insensitive search across
+  titles, bodies, and tags
 - Markdown post pages with fenced-code syntax highlighting (PrismLight build —
   only the languages a dev blog needs are bundled)
 - Sign in with username/password or Google (ID-token validation server-side —
@@ -17,12 +18,12 @@ Markdown and rendered with syntax highlighting.
 - 15-minute access tokens, 7-day rotating refresh tokens with a sliding window,
   transparent refresh in an axios interceptor (single-flight: parallel 401s
   share one refresh request)
-- Role-aware UI: Writers/Admins get a dashboard, editor with live Markdown
-  preview, edit/delete on their own posts (Admins on everything)
+- Role-aware UI: Writers/Admins get a dashboard, an editor with Markdown
+  preview, and edit/delete on their own posts (Admins on everything)
 - `GET /api/blogposts` served read-through from Redis with 5-minute expiry and
   invalidation on every mutation; a dead Redis degrades to DB reads instead of
   taking the site down
-- Fixed-window rate limiting on all auth endpoints
+- Fixed-window rate limiting on every auth endpoint
 - EF Core migrations applied automatically on startup (with retry, for
   compose cold starts) + idempotent seeding of roles, the admin account, and
   demo posts
@@ -41,24 +42,35 @@ blog-client/         React 19 + TypeScript + Vite frontend
   src/contexts/      AuthContext (typed user decoded from the JWT)
   src/components/    Route guards, Markdown renderer, post card
   src/pages/         List, detail, editor (with preview), dashboard, login, register
+deploy/              Production compose stack behind a Cloudflare Tunnel
 ```
 
 ## Run it locally
 
-You need: .NET 8 SDK, Node 22, and Docker (or a native PostgreSQL 16 install).
-Redis is optional — the API falls back to an in-memory cache when no Redis
-connection string is set, so nothing else needs to be running.
+**With Docker — one command, nothing else installed:**
+
+```bash
+docker compose up -d --build
+# client   http://localhost:8080
+# API      http://localhost:5028/swagger
+# sign in  admin@localhost.dev / Admin!Dev123
+```
+
+Migrations run on first start and a dev admin plus three demo posts are seeded.
+`docker compose down` stops it; data persists in the `pgdata` volume.
+
+**Without Docker** you need the .NET 8 SDK, Node 22, and PostgreSQL 16. Redis is
+optional — the API falls back to an in-memory cache when no Redis connection
+string is set.
 
 **1. Start the database.** The dev configuration
 (`appsettings.Development.json`) expects PostgreSQL on `localhost:5432` with
-database `blogdb` and user/password `postgres`/`postgres`. With Docker that is
-one command (works the same in PowerShell and bash):
+database `blogdb` and user/password `postgres`/`postgres`:
 
 ```bash
 docker run -d --name blog-postgres -e POSTGRES_DB=blogdb -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -v blog-pgdata:/var/lib/postgresql/data postgres:16-alpine
 ```
 
-On later runs the container already exists — just `docker start blog-postgres`.
 Without a reachable database the API retries five times on startup and then
 exits with a connection error.
 
@@ -68,8 +80,8 @@ exits with a connection error.
 cd Blog.Api
 dotnet run
 # Swagger at http://localhost:5028/swagger
-# Migrations run automatically; a dev admin (admin@localhost.dev / Admin!Dev123)
-# and three demo posts are seeded on first start.
+# A dev admin (admin@localhost.dev / Admin!Dev123) and three demo posts
+# are seeded on first start.
 ```
 
 **3. Run the client:**
@@ -90,7 +102,7 @@ Everything is configured through standard ASP.NET configuration
 | --- | --- |
 | `ConnectionStrings__DefaultConnection` | PostgreSQL connection string |
 | `ConnectionStrings__Redis` | Redis (empty ⇒ in-memory cache) |
-| `Jwt__Key` | HMAC signing key — long random string, **required** |
+| `Jwt__Key` | HMAC signing key — at least 32 bytes, **required** |
 | `Jwt__Issuer` / `Jwt__Audience` | Token issuer/audience (defaults provided) |
 | `Cors__AllowedOrigins` | Comma-separated allowed origins |
 | `AdminUser__Email` / `AdminUser__Password` | Seeded admin account |
@@ -115,7 +127,53 @@ with `Google.Apis.Auth`.
 
 ## Deployment
 
-`Blog.Api/Dockerfile` and `blog-client/Dockerfile` build production images
-(the client is a static nginx site with an SPA fallback). A full
-Docker Compose stack — Postgres, Redis, both apps, and a Cloudflare Tunnel —
-lives in the sibling `deploy/` bundle.
+The live site runs from a home machine. `deploy/docker-compose.yml` brings up
+Postgres, Redis, the API, the static client behind nginx, and a `cloudflared`
+connector that publishes it on a domain — no port forwarding, no static IP, no
+exposed ports. `cloudflared` opens an *outbound* connection to Cloudflare's
+edge and TLS terminates there.
+
+**1. Create the tunnel.** Cloudflare dashboard → Zero Trust → Networks →
+Tunnels → Create a tunnel → Cloudflared. Copy the connector token (the long
+string after `--token`); nothing needs installing locally, the stack runs the
+connector itself.
+
+**2. Map the hostnames.** In the tunnel's *Public Hostnames* tab add two
+routes. The service URLs are compose service names, resolved over the internal
+Docker network:
+
+| Public hostname          | Service                 |
+| ------------------------ | ----------------------- |
+| `blog.<your-domain>`     | `http://blog-client:80` |
+| `api.blog.<your-domain>` | `http://blog-api:8080`  |
+
+**3. Start it.**
+
+```bash
+cd deploy
+cp .env.example .env
+openssl rand -base64 48   # paste as JWT_KEY
+# fill in DOMAIN, TUNNEL_TOKEN, POSTGRES_PASSWORD, ADMIN_EMAIL, ADMIN_PASSWORD
+docker compose up -d --build
+```
+
+Every required variable is guarded, so a missing one fails the `up` immediately
+with a message naming it rather than starting a half-broken stack. First start
+applies migrations and seeds the roles, your admin account, and three demo
+posts.
+
+For Google sign-in, set `GOOGLE_CLIENT_ID` in `.env` — the client id is
+compiled into the frontend bundle, so rebuild both services:
+`docker compose up -d --build blog-client blog-api`.
+
+```bash
+docker compose logs -f blog-api      # tail a service
+docker compose up -d --build         # redeploy after code changes
+docker compose down                  # stop; data persists in the pgdata volume
+
+docker compose exec postgres pg_dump -U bloguser blogdb > backup.sql
+docker compose exec -T postgres psql -U bloguser blogdb < backup.sql
+```
+
+Dumps are gitignored (`*.sql`) — they contain user emails and Identity password
+hashes.
