@@ -36,7 +36,7 @@ services:
       Jwt__Key: "local-compose-signing-key-do-not-use-in-production-0123456789"
       Jwt__Issuer: blog-api
       Jwt__Audience: blog-client
-      Jwt__AccessTokenMinutes: "1"
+      Jwt__AccessTokenMinutes: "5"
       Cors__AllowedOrigins: "http://localhost:8080"
       AdminUser__Email: "admin@localhost.dev"
       AdminUser__Password: "Admin!Dev123"
