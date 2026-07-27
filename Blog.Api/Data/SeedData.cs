@@ -29,7 +29,7 @@ namespace Blog.Api.Data
 
             if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
             {
-                logger.LogWarning("AdminUser:Email / AdminUser:Password are not configured — skipping admin and demo post seeding.");
+                logger.LogWarning("AdminUser:Email / AdminUser:Password are not configured, skipping admin and demo post seeding.");
                 
                 return;
             }
@@ -77,44 +77,24 @@ namespace Blog.Api.Data
 
         private static readonly List<(string title, List<string> tags, int daysAgo, string content)> DemoPosts = new()
         {
-            ("Hello, world — why this blog exists", new List<string> { "meta" }, 14,
-@"This site is a working sample of a full-stack setup I built from scratch: a **React 19 + TypeScript** frontend, a **.NET 8** API with ASP.NET Core Identity, JWT access tokens with rotating refresh tokens, PostgreSQL via EF Core, and Redis caching — all deployed from a home machine through a Cloudflare Tunnel.
+            ("Sample post", new List<string> { "sample" }, 1,
+            @"Placeholder content, so the list, excerpt, tags, and Markdown renderer have
+            something to show.
 
-Posts here are written in Markdown and rendered with syntax highlighting, like so:
+            **Bold**, *italic*, `inline code`, and a [link](https://github.com/ashotptr).
 
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<ApplicationDbContext>(
-    options => options.UseNpgsql(connectionString));
-```
+            - One
+            - Two
 
-The source for both the API and this client is on my GitHub — every feature you see here maps to real code you can read."),
+            | Column | Column |
+            | ------ | ------ |
+            | Row    | cell   |
 
-            ("JWT refresh tokens: the bug that silently breaks everything", new List<string> { "dotnet", "auth" }, 7,
-@"A refresh endpoint usually validates the *expired* access token, looks up the user, and rotates the refresh token. Mine kept returning `400 Invalid token` — and the reason is a classic.
-
-`principal.Identity.Name` is populated from `ClaimTypes.Name`. My token service issued `sub`, `jti`, and `nameidentifier` claims… but never `Name`:
-
-```csharp
-new Claim(ClaimTypes.Name, user.UserName ?? string.Empty)
-```
-
-One line. The lesson: when auth fails *silently*, print the claims collection before anything else. The JWT claim-type outbound mapping (`ClaimTypes.Name` → `unique_name`) is also why the frontend reads `unique_name` from the decoded token."),
-
-            ("Serving a side project from your desk with Cloudflare Tunnel", new List<string> { "devops", "docker" }, 2,
-@"You don't need a VPS to put a project on a real domain. `cloudflared` opens an *outbound* connection from your machine to Cloudflare's edge, so nothing on your network is exposed — no port forwarding, no static IP.
-
-The whole stack runs in Docker Compose: Postgres, Redis, the API, the static frontend behind nginx, and a `cloudflared` container:
-
-```yaml
-cloudflared:
-  image: cloudflare/cloudflared:latest
-  command: tunnel run
-  environment:
-    - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-```
-
-Public hostnames map straight to compose service names (`http://blog-client:80`), TLS terminates at Cloudflare's edge, and the laptop just… serves the internet.")
+            ```csharp
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddDbContext<ApplicationDbContext>(o => o.UseNpgsql(cs));
+            ```
+            ")
         };
     }
 }

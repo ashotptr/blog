@@ -27,7 +27,7 @@ const RegisterPage = () => {
       if (axios.isAxiosError(err) && Array.isArray(err.response?.data)) {
         setErrors((err.response.data as IdentityError[]).map(x => x.description));
       } else if (axios.isAxiosError(err) && err.response?.status === 429) {
-        setErrors(['Too many attempts — please wait a moment and try again.']);
+        setErrors(['Too many attempts, please wait a moment and try again.']);
       } else {
         setErrors(['Registration failed. Please try again.']);
       }

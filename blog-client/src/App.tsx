@@ -22,7 +22,7 @@ const App = () => {
   return (
     <div className="site">
       <header className="site-header">
-        <Link to="/" className="site-title">./dev-blog</Link>
+        <Link to="/" className="site-title">./blog</Link>
 
         <nav>
           <NavLink to="/" end>Posts</NavLink>
@@ -59,7 +59,7 @@ const App = () => {
       </main>
 
       <footer className="site-footer">
-        <p>Built with React 19, .NET 8, PostgreSQL, and Redis — served from a home machine through a Cloudflare Tunnel.</p>
+        <p>Blog</p>
       </footer>
     </div>
   );

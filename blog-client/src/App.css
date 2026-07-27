@@ -7,8 +7,6 @@
   flex-direction: column;
 }
 
-/* ---------- header ---------- */
-
 .site-header {
   display: flex;
   align-items: baseline;
@@ -66,8 +64,6 @@
   font-family: var(--mono);
   color: var(--ink-soft);
 }
-
-/* ---------- shared bits ---------- */
 
 .post-meta {
   font-family: var(--mono);
@@ -152,8 +148,6 @@ button:disabled {
   color: var(--danger);
 }
 
-/* ---------- posts list ---------- */
-
 .search-bar {
   display: flex;
   gap: 0.5rem;
@@ -198,8 +192,6 @@ button:disabled {
   margin: 0.6rem 0 0;
   color: var(--ink-soft);
 }
-
-/* ---------- post detail ---------- */
 
 .back-link {
   font-family: var(--mono);
@@ -281,8 +273,6 @@ button:disabled {
   text-align: left;
 }
 
-/* ---------- auth pages ---------- */
-
 .auth-page {
   max-width: 22rem;
   margin: 2rem auto 0;
@@ -339,8 +329,6 @@ button:disabled {
   color: var(--ink-soft);
 }
 
-/* ---------- editor ---------- */
-
 .editor-form {
   display: flex;
   flex-direction: column;
@@ -371,8 +359,6 @@ button:disabled {
 .editor-form button[type='submit'] {
   align-self: flex-start;
 }
-
-/* ---------- dashboard ---------- */
 
 .dashboard-header {
   display: flex;

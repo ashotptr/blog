@@ -27,7 +27,7 @@ const LoginPage = () => {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         setError('Invalid username or password.');
       } else if (axios.isAxiosError(err) && err.response?.status === 429) {
-        setError('Too many attempts — please wait a moment and try again.');
+        setError('Too many attempts, please wait a moment and try again.');
       } else {
         setError('Could not sign in. Please try again.');
       }

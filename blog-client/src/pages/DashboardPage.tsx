@@ -56,7 +56,7 @@ const DashboardPage = () => {
 
       {!loading && visiblePosts.length === 0 && (
         <p className="status-line">
-          {canWrite ? 'No posts yet — write your first one!' : 'Nothing to manage: your account has read access.'}
+          {canWrite ? 'No posts yet, write your first one!' : 'Nothing to manage, your account has read access.'}
         </p>
       )}
 
