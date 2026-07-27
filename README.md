@@ -33,6 +33,7 @@ docker compose up -d --build
  
 - Site: <http://localhost:8080>
 - Sign in: `admin@localhost.dev` / `AdminDev04!`
+
 Migrations run and a sample post is seeded on first start. `docker compose down`
 stops it, data persists in the `pgdata` volume, `down -v` wipes it.
  
