@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: blogdb
       POSTGRES_USER: bloguser
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -32,12 +32,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=blogdb;Username=bloguser;Password=${POSTGRES_PASSWORD}"
       ConnectionStrings__Redis: "redis:6379"
-      Jwt__Key: ${JWT_KEY:?set JWT_KEY in .env — generate with openssl rand -base64 48}
+      Jwt__Key: ${JWT_KEY:?}
       Jwt__Issuer: blog-api
       Jwt__Audience: blog-client
-      Cors__AllowedOrigins: "https://blog.${DOMAIN:?set DOMAIN in .env}"
-      AdminUser__Email: ${ADMIN_EMAIL:?set ADMIN_EMAIL in .env}
-      AdminUser__Password: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      Cors__AllowedOrigins: "https://blog.${DOMAIN:?}"
+      AdminUser__Email: ${ADMIN_EMAIL:?}
+      AdminUser__Password: ${ADMIN_PASSWORD:?}
       Authentication__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
     depends_on:
       postgres:
@@ -60,7 +60,7 @@ services:
     restart: unless-stopped
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?}
     depends_on:
       - blog-client
 

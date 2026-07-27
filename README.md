@@ -53,7 +53,7 @@ deploy/              Production compose stack behind a Cloudflare Tunnel
 docker compose up -d --build
 # client   http://localhost:8080
 # API      http://localhost:5028/swagger
-# sign in  admin@localhost.dev / Admin!Dev123
+# sign in  admin@localhost.dev / AdminDev04!
 ```
 
 Migrations run on first start and a dev admin plus three demo posts are seeded.
@@ -80,7 +80,7 @@ exits with a connection error.
 cd Blog.Api
 dotnet run
 # Swagger at http://localhost:5028/swagger
-# A dev admin (admin@localhost.dev / Admin!Dev123) and three demo posts
+# A dev admin (admin@localhost.dev / AdminDev04!) and three demo posts
 # are seeded on first start.
 ```
 

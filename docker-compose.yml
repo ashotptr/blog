@@ -33,13 +33,13 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=blogdb;Username=postgres;Password=postgres"
       ConnectionStrings__Redis: "redis:6379"
-      Jwt__Key: "local-compose-signing-key-do-not-use-in-production-0123456789"
+      Jwt__Key: "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       Jwt__Issuer: blog-api
       Jwt__Audience: blog-client
       Jwt__AccessTokenMinutes: "5"
-      Cors__AllowedOrigins: "http://localhost:8080"
+      Cors__AllowedOrigins: "http://localhost:8080,http://localhost:5173"
       AdminUser__Email: "admin@localhost.dev"
-      AdminUser__Password: "Admin!Dev123"
+      AdminUser__Password: "AdminDev04!"
     ports:
       - "5028:8080"
     depends_on:
