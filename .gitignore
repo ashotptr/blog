@@ -14,6 +14,10 @@ build/
 client_secret*.json
 appsettings.Production.json
 
+*.db
+*.db-wal
+*.db-shm
+
 *.sql
 
 docker-compose.override.yml

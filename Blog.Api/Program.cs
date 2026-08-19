@@ -51,7 +51,19 @@ else
     builder.Services.AddDistributedMemoryCache();
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseNpgsql(connectionString));
+var databaseProvider = DatabaseSetup.ResolveProvider(builder.Configuration);
+var databaseConnectionString = DatabaseSetup.ResolveConnectionString(builder.Configuration, databaseProvider);
+
+var fellBackToSqlite = false;
+
+if (databaseProvider == DatabaseProvider.Postgres && DatabaseSetup.ShouldFallBackToSqlite(builder.Configuration, builder.Environment) && !DatabaseSetup.CanReachPostgres(databaseConnectionString))
+{
+    databaseProvider = DatabaseProvider.Sqlite;
+    databaseConnectionString = $"Data Source={DatabaseSetup.DefaultSqliteFile}";
+    fellBackToSqlite = true;
+}
+
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseProvider(databaseProvider, databaseConnectionString));
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
 
@@ -95,7 +107,7 @@ app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    
+
     await next();
 });
 
@@ -114,25 +126,50 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<ApplicationDbContext>();
 
-    for (int attempt = 1; ; attempt++)
+    if (databaseProvider == DatabaseProvider.Sqlite)
     {
-        try
+        db.Database.EnsureCreated();
+
+        if (fellBackToSqlite)
         {
-            db.Database.Migrate();
-            
-            break;
+            app.Logger.LogWarning(
+                "PostgreSQL was configured but could not be reached, so this process is " +
+                "running on SQLite at {ConnectionString}. Data will not be shared with " +
+                "the PostgreSQL database. Set Database:FallbackToSqlite to false to fail " +
+                "instead.", databaseConnectionString);
         }
-        catch (Exception ex) when (attempt < 5)
+        else
         {
-            app.Logger.LogWarning(ex, "Database not ready (attempt {Attempt}/5), retrying in 3 seconds...", attempt);
-            
-            await Task.Delay(3000);
+            app.Logger.LogInformation(
+                "Using SQLite at {ConnectionString}. No migrations were applied, the schema " +
+                "was created from the model. Configure ConnectionStrings:DefaultConnection " +
+                "to use PostgreSQL.", databaseConnectionString);
+        }
+    }
+    else
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                db.Database.Migrate();
+
+                break;
+            }
+            catch (Exception ex) when (attempt < 5)
+            {
+                app.Logger.LogWarning(ex, "Database not ready (attempt {Attempt}/5), retrying in 3 seconds...", attempt);
+
+                await Task.Delay(3000);
+            }
         }
     }
 
     var configuration = services.GetRequiredService<IConfiguration>();
-    
+
     await SeedData.Initialize(services, configuration);
 }
 
 app.Run();
+
+public partial class Program { }
